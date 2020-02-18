@@ -61,10 +61,6 @@ function add (
     const original = handler
     handler = original._wrapper = function (e) {
       if (
-        // no bubbling, should always fire.
-        // this is just a safety net in case event.timeStamp is unreliable in
-        // certain weird environments...
-        e.target === e.currentTarget ||
         // event is fired after handler attachment
         e.timeStamp >= attachedTimestamp ||
         // bail for environments that have buggy event.timeStamp implementations
@@ -74,7 +70,13 @@ function add (
         // #9448 bail if event is fired in another document in a multi-page
         // electron/nw.js app, since event.timeStamp will be using a different
         // starting reference
-        e.target.ownerDocument !== document
+        e.target.ownerDocument !== document ||
+        // no bubbling, should always fire.
+        // this is just a safety net in case event.timeStamp is unreliable in
+        // certain weird environments...
+        e.target === e.currentTarget ||
+
+        e.currentTarget.contains(e.target)
       ) {
         return original.apply(this, arguments)
       }
